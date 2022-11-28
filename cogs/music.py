@@ -7,6 +7,11 @@ import datetime
 class Music(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
+
+        # Queue stuff
+        self.queue = wavelink.Queue()
+        self.queue_ctx = None
+
         bot.loop.create_task(self.connect_nodes())
 
     async def connect_nodes(self):
@@ -23,6 +28,16 @@ class Music(commands.Cog):
         # Fire event when a node has finished connecting
         print(f'Node: <{node.identifier}> is ready!')
 
+    @commands.Cog.listener()
+    async def on_wavelink_track_end(self, player: wavelink.Player, track: wavelink.YouTubeTrack, reason):
+        if not self.queue:
+            self.queue_ctx = None
+            return
+        
+        track = self.queue.pop()
+        await self.queue_ctx.send(f'**Now playing: {track.title} [{datetime.timedelta(seconds=track.length)}]**')
+        await player.play(track)
+
     @commands.command()
     async def connect(self, ctx: commands.Context):
         """Connect to the voice channel"""
@@ -31,6 +46,8 @@ class Music(commands.Cog):
 
         try:
             player: wavelink.Player = await ctx.author.voice.channel.connect(cls=wavelink.Player)
+
+            # Make bot deaf
             await ctx.guild.change_voice_state(channel=ctx.author.voice.channel, self_mute=False, self_deaf=True)
         except:
             await ctx.send('**Cannot connect to the voice channel.**')
@@ -59,8 +76,19 @@ class Music(commands.Cog):
         if not track:
             return await ctx.send('**No track found with given query.**')
 
-        await vc.play(track)
-        await ctx.send(f'**Now playing: {track.title} [{datetime.timedelta(seconds=track.length)}]**')
+        self.queue.put(track)
+        await ctx.send(f'**Added to the queue: {track.title} [{datetime.timedelta(seconds=track.length)}]**')
+
+        self.queue_ctx = ctx
+        if not vc.is_playing():
+            await self.on_wavelink_track_end(player=vc, track=track, reason=None)
+
+    @commands.command()
+    async def queue(self, ctx: commands.Context):
+        """Lists all tracks in the queue"""
+        for idx, track in enumerate(self.queue):
+            await ctx.send(f'{idx + 1}. {track.title} [{datetime.timedelta(seconds=track.length)}]')
+
 
 def setup(bot):
     bot.add_cog(Music(bot))
