@@ -81,7 +81,7 @@ class Music(commands.Cog):
 
         self.queue_ctx = ctx
         if not vc.is_playing():
-            await self.on_wavelink_track_end(player=vc, track=None, reason=None)
+            await self.on_wavelink_track_end(player=vc, track=track, reason=None)
 
     @commands.command()
     async def skip(self, ctx: commands.Context):
@@ -92,13 +92,28 @@ class Music(commands.Cog):
             return
         
         await vc.stop()
-        await self.on_wavelink_track_end(player=vc, track=None, reason=None)
+        await ctx.send(f'**Skipped {self.queue[0].title} [{datetime.timedelta(seconds=self.queue[0].length)}]**')
+        await self.on_wavelink_track_end(player=vc, track=self.queue[0], reason=None)
 
     @commands.command()
     async def queue(self, ctx: commands.Context):
         """Lists all tracks in the queue"""
+        if not self.queue:
+            await ctx.send('**The queue is empty**')
         for idx, track in enumerate(self.queue):
             await ctx.send(f'{idx + 1}. {track.title} [{datetime.timedelta(seconds=track.length)}]')
+
+    @commands.command()
+    async def stop(self, ctx: commands.Context):
+        """Stops track and clears the queue"""
+        vc: wavelink.Player = ctx.voice_client
+
+        if not vc.is_playing():
+            return
+
+        await vc.stop()
+        await ctx.send(f'**Cleared the queue**')
+        await self.queue.clear()
 
 
 def setup(bot: commands.Bot):
