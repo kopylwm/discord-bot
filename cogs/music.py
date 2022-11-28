@@ -10,7 +10,7 @@ class Music(commands.Cog):
 
         # Queue stuff
         self.queue = wavelink.Queue()
-        self.queue_ctx = None
+        self.queue_ctx: commands.Context = None
 
         bot.loop.create_task(self.connect_nodes())
 
@@ -81,7 +81,18 @@ class Music(commands.Cog):
 
         self.queue_ctx = ctx
         if not vc.is_playing():
-            await self.on_wavelink_track_end(player=vc, track=track, reason=None)
+            await self.on_wavelink_track_end(player=vc, track=None, reason=None)
+
+    @commands.command()
+    async def skip(self, ctx: commands.Context):
+        """Skips track to the next one"""
+        vc: wavelink.Player = ctx.voice_client
+
+        if not vc.is_playing:
+            return
+        
+        await vc.stop()
+        await self.on_wavelink_track_end(player=vc, track=None, reason=None)
 
     @commands.command()
     async def queue(self, ctx: commands.Context):
@@ -90,5 +101,5 @@ class Music(commands.Cog):
             await ctx.send(f'{idx + 1}. {track.title} [{datetime.timedelta(seconds=track.length)}]')
 
 
-def setup(bot):
+def setup(bot: commands.Bot):
     bot.add_cog(Music(bot))
