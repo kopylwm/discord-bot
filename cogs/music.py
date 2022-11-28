@@ -31,6 +31,7 @@ class Music(commands.Cog):
 
         try:
             player: wavelink.Player = await ctx.author.voice.channel.connect(cls=wavelink.Player)
+            await ctx.guild.change_voice_state(channel=ctx.author.voice.channel, self_mute=False, self_deaf=True)
         except:
             await ctx.send('**Cannot connect to the voice channel.**')
 
