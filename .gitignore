@@ -1,3 +1,13 @@
+# Byte-compiled / optimized files
+cogs/__pycache__
+/__pycache__
+
+# Lavalink
+/lavalink
+
+# Environments
 /venv
 .env
+
+# Logs
 discord.log
