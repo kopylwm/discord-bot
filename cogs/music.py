@@ -35,7 +35,6 @@ class Music(commands.Cog):
     @commands.Cog.listener()
     async def on_wavelink_track_end(self, player: wavelink.Player, track: wavelink.YouTubeTrack, reason):
         if self.loop_var:
-            await self.queue_ctx.send(f'**Now playing: {self.loop_track.title} [{datetime.timedelta(seconds=self.loop_track.length)}]**')
             return await player.play(self.loop_track)
 
         if not self.queue:
@@ -92,6 +91,7 @@ class Music(commands.Cog):
         
         if self.loop_var and self.loop_track is None:
             self.loop_track = self.queue.get()
+            await self.queue_ctx.send(f'**Now playing: {self.loop_track.title} [{datetime.timedelta(seconds=self.loop_track.length)}]**')
 
         self.queue_ctx = ctx
         if not vc.is_playing():
@@ -113,6 +113,7 @@ class Music(commands.Cog):
         
         if self.loop_var:
             self.loop_track = self.queue.get()
+            await self.queue_ctx.send(f'**Now playing: {self.loop_track.title} [{datetime.timedelta(seconds=self.loop_track.length)}]**')
 
     @commands.command()
     async def clear(self, ctx: commands.Context):
