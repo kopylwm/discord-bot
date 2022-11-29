@@ -10,10 +10,12 @@ class Music(commands.Cog):
 
         # Queue stuff
         self.queue: wavelink.Queue = wavelink.Queue()
+        self.saved_queue: wavelink.Queue = wavelink.Queue()
         self.queue_ctx: commands.Context = None
 
         # Loop stuff
         self.loop_var: bool = False
+        self.queue_loop_var: bool = False
         self.loop_track: wavelink.YouTubeTrack = None
 
         bot.loop.create_task(self.connect_nodes())
@@ -36,6 +38,10 @@ class Music(commands.Cog):
     async def on_wavelink_track_end(self, player: wavelink.Player, track: wavelink.YouTubeTrack, reason):
         if self.loop_var:
             return await player.play(self.loop_track)
+
+        if self.queue_loop_var and not self.queue:
+            for song in self.saved_queue:
+                self.queue.put(song)
 
         if not self.queue:
             self.queue_ctx = None
@@ -88,6 +94,7 @@ class Music(commands.Cog):
 
         await ctx.send(f'**Added to the queue: {track.title} [{datetime.timedelta(seconds=track.length)}]**')
         self.queue.put(track)
+        self.saved_queue.put(track)
         
         if self.loop_var and self.loop_track is None:
             self.loop_track = self.queue.get()
@@ -124,19 +131,20 @@ class Music(commands.Cog):
                 return await ctx.send('**You must be in the same voice channel as the player.**')
         except: return
 
+        if self.saved_queue:
+            await self.queue.clear()
+            await self.saved_queue.clear()
         if vc.is_playing():
             await vc.stop()
-        if self.queue:
-            await self.queue.clear()
-
+        
         await ctx.send(f'**Stopped current track and cleared the queue**')
 
     @commands.command()
     async def queue(self, ctx: commands.Context):
         """List all tracks in the queue"""
-        if not self.queue:
+        if not self.saved_queue:
             await ctx.send('**The queue is empty**')
-        for idx, track in enumerate(self.queue):
+        for idx, track in enumerate(self.saved_queue):
             await ctx.send(f'{idx + 1}. {track.title} [{datetime.timedelta(seconds=track.length)}]')
 
     @commands.command()
@@ -155,6 +163,16 @@ class Music(commands.Cog):
 
         self.loop_var = True
         await ctx.send('**Enabled track loop**')
+
+    @commands.command()
+    async def loop_queue(self, ctx: commands.Context):
+        """Enable/Disable queue loop"""
+        if self.queue_loop_var:
+            self.queue_loop_var = False
+            return await ctx.send('**Disabled queue loop**')
+
+        self.queue_loop_var = True
+        await ctx.send('**Enabled queue loop**')
 
 def setup(bot: commands.Bot):
     bot.add_cog(Music(bot))
