@@ -29,6 +29,10 @@ def main():
     async def on_ready():
         print(f'{bot.user} is ready!')
 
+    @bot.event
+    async def on_command_error(ctx: commands.Context, error: commands.CommandError):
+        pass
+    
     # Add all commands
     bot.load_extension('cogs.music')
     
