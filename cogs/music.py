@@ -42,13 +42,12 @@ class Music(commands.Cog):
             self.queue_ctx = None
             return
 
-        track = self.queue.get()
-
-        print('popped:', track.title)
+        try:
+            track = self.queue.get()
+        except: return
 
         await self.queue_ctx.send(f'**Now playing: {track.title} [{datetime.timedelta(seconds=track.length)}]**')
         await player.play(track)
-        print('i should play music now:', track.title)
 
     @commands.command()
     async def connect(self, ctx: commands.Context):
@@ -112,7 +111,7 @@ class Music(commands.Cog):
         await ctx.send(f'**Skipped {vc.track.title} [{datetime.timedelta(seconds=vc.track.length)}]**')
         await vc.stop()
         
-        if self.loop:
+        if self.loop_var:
             self.loop_track = self.queue.get()
 
     @commands.command()
