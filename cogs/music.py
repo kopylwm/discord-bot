@@ -35,7 +35,7 @@ class Music(commands.Cog):
     @commands.Cog.listener()
     async def on_wavelink_track_end(self, player: wavelink.Player, track: wavelink.YouTubeTrack, reason):
         if self.loop_var:
-            await self.queue_ctx.send(f'**Now playing: {loop_track.title} [{datetime.timedelta(seconds=loop_track.length)}]**')
+            await self.queue_ctx.send(f'**Now playing: {self.loop_track.title} [{datetime.timedelta(seconds=self.loop_track.length)}]**')
             return await player.play(self.loop_track)
 
         if not self.queue:
